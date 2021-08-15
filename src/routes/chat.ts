@@ -6,6 +6,11 @@ import events from 'events';
 import _ from 'lodash';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import http from 'http';
+import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
+
+const privateKey = fs.readFileSync(path.resolve(__dirname, '../private.pem'));
 
 const socketIni = (http: http.Server) => {
   const eventEmitter = new events.EventEmitter();
@@ -72,6 +77,7 @@ const socketIni = (http: http.Server) => {
       msgCount,
     });
   };
+  // ioChat.on("hello",()=>{console.log("h1");});
   ioChat.on(
     'connection',
     (
@@ -97,15 +103,22 @@ const socketIni = (http: http.Server) => {
           username: username,
           userPStack: socket.userPStack,
         });
+        // console.log("grbhhvj");
       });
       socket.on('getAllRoomId', data => {
+        console.log('hello');
+
         eventEmitter.emit('sendRoomIds', {data, username: socket.username});
       });
       socket.on('setRoom', room => {
         //leaving room.
-        for (const groom of socket.gRoom) {
-          socket.leave(groom);
-        }
+        // console.log(socket.gRoom);
+        if (socket.gRoom != undefined) {
+          for (const groom of socket.gRoom) {
+            socket.leave(groom);
+          }
+        } else socket.gRoom = [];
+
         //getting room data.
         eventEmitter.emit('getRoomData', room);
         //setting room and join.
@@ -145,20 +158,22 @@ const socketIni = (http: http.Server) => {
           msg: data.msg,
           chatId: data.roomId,
         });
-        socket.on('disconnect', () => {
-          console.log(socket.username + ' logged out');
-          socket.leaveAll();
-          console.log('chat disconnected.');
-          _.unset(userSocket, socket.username);
-          userStack[socket.username] = 'Offline';
-          ioChat.emit('onlineStack', userStack);
-        });
+      });
+      socket.on('disconnect', () => {
+        console.log(socket.username + ' logged out');
+        socket.leaveAll();
+        console.log('chat disconnected.');
+        _.unset(userSocket, socket.username);
+        userStack[socket.username] = 'Offline';
+        ioChat.emit('onlineStack', userStack);
       });
     }
   );
 
   eventEmitter.on('saveChat', async data => {
     try {
+      // console.log("hello");
+
       const newMessage = new Message({
         from: data.msgFrom,
         to: data.msgTo,
@@ -244,6 +259,8 @@ const socketIni = (http: http.Server) => {
       for (let i = 0; i < users.length; i++) {
         userStack[users[i].username] = 'Offline';
       }
+      // console.log(user);
+
       sendUserStack(user.chatPersons, data.userPStack, data.username);
     } catch (err) {
       ioChat.to(userSocket[data.username]).emit('error', err.message);
@@ -252,6 +269,8 @@ const socketIni = (http: http.Server) => {
 
   eventEmitter.on('createNewChat', async data => {
     try {
+      console.log('heool');
+
       const newMessage = new Message({
         from: data.from,
         to: data.to,
@@ -271,6 +290,15 @@ const socketIni = (http: http.Server) => {
         const user = await User.findById(data.from._id).exec();
         user.chatPersons = [...new Set(user.chatPersons.concat(data.to))];
         await user.save();
+        const accessToken = jwt.sign({user}, privateKey, {
+          expiresIn: '10min',
+          issuer: 'auth.devclub.in',
+          algorithm: 'RS256',
+        });
+        // const refreshToken = jwt.sign({user}, privateKey);
+        // res.status(200).send({accessToken, refreshToken});
+
+        console.log(accessToken);
       }
       const userb = await User.findById(data.to._id).exec();
       userb.chatPersons = [...new Set(userb.chatPersons.concat(data.from))];
@@ -290,6 +318,8 @@ const socketIni = (http: http.Server) => {
   });
 
   eventEmitter.on('revealIden', async data => {
+    console.log(20);
+
     try {
       const user = await User.findById(data.from._id).exec();
       const newMessage = new Message({

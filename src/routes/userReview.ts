@@ -4,20 +4,39 @@ import Review, {MReview} from '../models/review';
 import User from '../models/user';
 import Notification from '../models/notification';
 import middleware from '../middleware';
+import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
+
+const privateKey = fs.readFileSync(path.resolve(__dirname, '../private.pem'));
 
 // Reviews Index
-router.get('/', (req: express.Request, res: express.Response) => {
-  User.findById(req.params.id)
+router.get('/', async (req: express.Request, res: express.Response) => {
+  try {
+    const user = await await User.findById(req.params.id)
     .populate({
       path: 'reviews',
       options: {sort: {createdAt: -1}}, // sorting the populated reviews array to show the latest first
     })
-    .exec((err, user) => {
-      if (err || !user) {
-        res.status(500).send(err.message);
-      }
-      res.status(200).json(user.reviews);
-    });
+    .exec()
+    if(!user){
+      res.status(500).send("User not found");
+    }
+    res.status(200).json(user.reviews);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+  // await User.findById(req.params.id)
+  //   .populate({
+  //     path: 'reviews',
+  //     options: {sort: {createdAt: -1}}, // sorting the populated reviews array to show the latest first
+  //   })
+  //   .exec((err, user) => {
+  //     if (err || !user) {
+  //       res.status(500).send(err.message);
+  //     }
+  //     res.status(200).json(user.reviews);
+  //   });
 });
 
 // Reviews Create
@@ -33,7 +52,10 @@ router.post(
         .populate('notifs')
         .exec();
       const review = await Review.create(req.body.review);
+      // console.log(review);
+      
       //add author username/id and associated course to the review
+      // review.author={username: req.user.username, _id: req.user._id};
       review.author.username = req.user.username;
       review.author._id = req.user._id;
       review.user.username = user.username;
@@ -52,7 +74,16 @@ router.post(
       const notification = await Notification.create(newNotification);
       user.notifs.push(notification);
       await user.save();
-      res.send('OK');
+      delete user.password;
+      const accessToken = jwt.sign({user}, privateKey, {
+        expiresIn: '10min',
+        issuer: 'auth.devclub.in',
+        algorithm: 'RS256',
+      });
+      // const refreshToken = jwt.sign({user}, privateKey);
+      // res.status(200).send({accessToken, refreshToken});
+
+      res.status(200).send(accessToken);
     } catch (err) {
       console.log(err);
       res.send(500).status(err.message);
@@ -96,7 +127,16 @@ router.put(
       const notification = await Notification.create(newNotification);
       user.notifs.push(notification);
       await user.save();
-      res.send(user.reviews);
+      delete user.password;
+      const accessToken = jwt.sign({user}, privateKey, {
+        expiresIn: '10min',
+        issuer: 'auth.devclub.in',
+        algorithm: 'RS256',
+      });
+      // const refreshToken = jwt.sign({user}, privateKey);
+      // res.status(200).send({accessToken, refreshToken});
+
+      res.status(200).send({accessToken, reviews:user.reviews});
     } catch (err) {
       res.status(500).send(err.message);
     }
@@ -127,7 +167,16 @@ router.delete(
       const notification = await Notification.create(newNotification);
       user.notifs.push(notification);
       await user.save();
-      res.send('OK');
+      delete user.password;
+      const accessToken = jwt.sign({user}, privateKey, {
+        expiresIn: '10min',
+        issuer: 'auth.devclub.in',
+        algorithm: 'RS256',
+      });
+      // const refreshToken = jwt.sign({user}, privateKey);
+      // res.status(200).send({accessToken, refreshToken});
+
+      res.status(200).send(accessToken);
     } catch (err) {
       res.status(500).send(err.message);
     }
@@ -168,30 +217,30 @@ router.patch(
   '/:review_id/upvote',
   middleware.isLoggedIn,
   async (req: express.Request, res: express.Response) => {
-    try {
+    try {      
       const review = await Review.findById(req.params.review_id).exec();
-      if (review.upvoted(req.user.id)) {
-        review.unvote(req.user.id);
+      if (review.upvoted(req.user._id)) {
+        review.unvote(req.user._id);
         await review.save();
         res
           .status(200)
           .json({votes: review.upvotes() - review.downvotes(), upvoted: false});
-      } else if (review.downvoted(req.user.id)) {
-        review.unvote(req.user.id);
+      } else if (review.downvoted(req.user._id)) {
+        review.unvote(req.user._id);
         await review.save();
-        review.upvote(req.user.id);
+        review.upvote(req.user._id);
         await review.save();
         res
           .status(200)
           .json({votes: review.upvotes() - review.downvotes(), upvoted: true});
       } else {
-        review.upvote(req.user.id);
+        review.upvote(req.user._id);
         await review.save();
         res
           .status(200)
           .json({votes: review.upvotes() - review.downvotes(), upvoted: true});
       }
-    } catch (err) {
+    } catch (err) {      
       res.status(500).send(err.message);
     }
   }
@@ -203,24 +252,24 @@ router.patch(
   async (req: express.Request, res: express.Response) => {
     try {
       const review = await Review.findById(req.params.review_id).exec();
-      if (review.downvoted(req.user.id)) {
-        review.unvote(req.user.id);
+      if (review.downvoted(req.user._id)) {
+        review.unvote(req.user._id);
         await review.save();
         res.status(200).json({
           votes: review.upvotes() - review.downvotes(),
           downvoted: false,
         });
-      } else if (review.downvoted(req.user.id)) {
-        review.unvote(req.user.id);
+      } else if (review.downvoted(req.user._id)) {
+        review.unvote(req.user._id);
         await review.save();
-        review.downvote(req.user.id);
+        review.downvote(req.user._id);
         await review.save();
         res.status(200).json({
           votes: review.upvotes() - review.downvotes(),
           downvoted: true,
         });
       } else {
-        review.downvote(req.user.id);
+        review.downvote(req.user._id);
         await review.save();
         res.status(200).json({
           votes: review.upvotes() - review.downvotes(),

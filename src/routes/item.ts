@@ -5,6 +5,11 @@ import User from '../models/user';
 import Chat from '../models/chat';
 import Notification from '../models/notification';
 import middleware from '../middleware';
+import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
+
+const privateKey = fs.readFileSync(path.resolve(__dirname, '../private.pem'));
 
 // var multer = require('multer');
 // var storage = multer.diskStorage({
@@ -190,6 +195,7 @@ router.post(
           month: req.body.month,
           year: req.body.year,
         },
+        hostel: req.body.hostel,
       };
       const item = await Item.create(newItem);
       const users = await User.find({folCategory: item.category}).exec();
@@ -331,6 +337,16 @@ router.patch(
         const notification = await Notification.create(newNotification);
         user.notifs.push(notification);
         await user.save();
+        delete user.password;
+        const accessToken = jwt.sign({user}, privateKey, {
+          expiresIn: '10min',
+          issuer: 'auth.devclub.in',
+          algorithm: 'RS256',
+        });
+        // const refreshToken = jwt.sign({user}, privateKey);
+        // res.status(200).send({accessToken, refreshToken});
+
+        res.status(200).send(accessToken);
         await req.item.save();
         res.status(200).send(req.item);
       }
@@ -371,8 +387,9 @@ router.patch(
           isItem: true,
         };
         const notification = await Notification.create(newNotification);
-        req.item.seller.notifs.push(notification);
-        await req.item.seller.save();
+        const seller = await User.findById(req.item.seller);
+        seller.notifs.push(notification);
+        await seller.save();
         await req.item.save();
         res.status(200).send(req.item);
       }

@@ -32,13 +32,14 @@ mongoose.set('useUnifiedTopology', true);
 mongoose.Promise = global.Promise;
 
 const databaseUri =
-  process.env.MONGODB_URI || 'mongodb://localhost:27017/iitd?replicaSet=rs0';
+  process.env.MONGODB_URI || 'mongodb://localhost:27017/iitdmarket';
 mongoose
   .connect(databaseUri)
   .then(() => console.log('Database connected'))
   .catch(err => console.log(`Database connection error: ${err.message}`));
 
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.json());
 app.set('trust proxy', 1);
 app.use(express.static(__dirname + '/public'));
 app.use(methodOverride('_method'));
@@ -53,16 +54,16 @@ app.use(
     resave: false,
     saveUninitialized: false,
     store: new MongoStore({
-      url: process.env.MONGODB_URI || 'mongodb://localhost/iitd',
+      url: process.env.MONGODB_URI || 'mongodb://localhost/iitdmarket',
     }),
   })
 );
 
-app.use(passport.initialize());
-app.use(passport.session());
-passport.use(new LocalStrategy(User.authenticate()));
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
+// app.use(passport.initialize());
+// app.use(passport.session());
+// passport.use(new LocalStrategy(User.authenticate()));
+// passport.serializeUser(User.serializeUser());
+// passport.deserializeUser(User.deserializeUser());
 
 app.use('/', indexRoutes);
 app.use('/item', itemRoutes);

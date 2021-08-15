@@ -7,6 +7,11 @@ import Message from '../models/message';
 import '../models/review';
 import '../models/notification';
 import middleware from '../middleware';
+import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
+
+const privateKey = fs.readFileSync(path.resolve(__dirname, '../private.pem'));
 
 //User Profile
 router.get('/:id/own', async (req: express.Request, res: express.Response) => {
@@ -64,7 +69,16 @@ router.put(
         }
         await Item.remove({seller: user._id}).exec();
         await user.save();
-        res.send(true);
+        delete user.password;
+        const accessToken = jwt.sign({user}, privateKey, {
+          expiresIn: '10min',
+          issuer: 'auth.devclub.in',
+          algorithm: 'RS256',
+        });
+        // const refreshToken = jwt.sign({user}, privateKey);
+        // res.status(200).send({accessToken, refreshToken});
+
+        res.status(200).send({accessToken, done: true});
       }
       res.send(false);
     } catch (err) {
@@ -84,7 +98,16 @@ router.put(
           Date.now() + 3600000 * 24 * Number(req.body.day)
         );
         await user.save();
-        res.send(true);
+        delete user.password;
+        const accessToken = jwt.sign({user}, privateKey, {
+          expiresIn: '10min',
+          issuer: 'auth.devclub.in',
+          algorithm: 'RS256',
+        });
+        // const refreshToken = jwt.sign({user}, privateKey);
+        // res.status(200).send({accessToken, refreshToken});
+
+        res.status(200).send({accessToken, done: true});
       }
       res.send(false);
     } catch (err) {
@@ -99,7 +122,7 @@ router.put(
   async (req: express.Request, res: express.Response) => {
     try {
       const user = await User.findById(req.params.id).exec();
-      if (!user._id.equals(req.user._id) || !req.user.isAdmin) {
+      if (user._id != req.user._id && !req.user.isAdmin) {
         console.log(req.user._id !== user._id, req.user._id, user._id);
         throw new Error('invalid user');
       }
@@ -112,7 +135,13 @@ router.put(
       user.email = req.body.email;
       user.description = req.body.description;
       await user.save();
-      req.login(user, () => {});
+      delete user.password;
+      const accessToken = jwt.sign({user}, privateKey, {
+        expiresIn: '10min',
+        issuer: 'auth.devclub.in',
+        algorithm: 'RS256',
+      });
+      res.status(200).send(accessToken);
       res.send('Done');
     } catch (err) {
       res.status(500).send(err.message);

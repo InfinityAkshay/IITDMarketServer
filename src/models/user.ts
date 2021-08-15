@@ -3,6 +3,9 @@ import passportLocalMongoose from 'passport-local-mongoose';
 import {PassportLocalSchema} from 'mongoose';
 import {MReview} from './review';
 import {MNotification} from './notification';
+import bcrypt from 'bcrypt';
+
+const SALT_WORK_FACTOR = 10;
 
 export interface MUser extends mongoose.Document {
   username: string;
@@ -23,6 +26,9 @@ export interface MUser extends mongoose.Document {
   reviews: MReview[];
   rating: number;
   folCategory: string[];
+  isverified: boolean;
+  roles: string[];
+  comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
 const UserSchema = new mongoose.Schema(
@@ -86,12 +92,47 @@ const UserSchema = new mongoose.Schema(
         trim: true,
       },
     ],
+    isverified: {
+      type: Boolean,
+      default: false,
+    },
+
+    roles: {
+      type: [String],
+      default: ['external_user'],
+    },
   },
   {
     timestamps: true,
   }
 );
 
-UserSchema.plugin(passportLocalMongoose);
+UserSchema.pre('save', function (next) {
+  var user = this as MUser;
 
-export default mongoose.model<MUser>('User', UserSchema as PassportLocalSchema);
+  // only hash the password if it has been modified (or is new)
+  if (!user.isModified('password')) return next();
+
+  // generate a salt
+  bcrypt.genSalt(SALT_WORK_FACTOR, function (err, salt) {
+    if (err) return next(err);
+
+    // hash the password using our new salt
+    bcrypt.hash(user.password, salt, function (err, hash) {
+      if (err) return next(err);
+      // override the cleartext password with the hashed one
+      user.password = hash;
+      next();
+    });
+  });
+});
+
+UserSchema.methods.comparePassword = async function (password: string) {
+  return bcrypt.compare(password, this.password);
+};
+
+// UserSchema.plugin(passportLocalMongoose);
+
+// export default mongoose.model<MUser>('User', UserSchema as PassportLocalSchema);
+
+export default mongoose.model<MUser>('User', UserSchema);

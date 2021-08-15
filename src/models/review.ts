@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 import {MUser} from './user';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const voting = require('mongoose-voting');
+// const voting = require('mongoose-voting');
+import voting from "./voting.js"
 
 export interface MReview extends mongoose.Document {
   rating: number;
