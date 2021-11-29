@@ -3,6 +3,12 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
+const MongoClient = require('mongodb').MongoClient;
+const assert = require('assert');
+const ObjectId = require('mongodb').ObjectId;
+
+const url = 'mongodb://localhost:27017/';
+const dbname = 'casi';
 
 // SSO Url for refreshing tokens that are about to expire
 const SSO_Refresh_URL = 'https://auth.devclub.in/auth/refresh-token';
@@ -43,6 +49,7 @@ const ROLES = {
 const defaultRoles = ['external_user'];
 
 const auth = async (req, res, next, todo) => {
+  return next();
   // Extract tokens from cookies
   const token = req.cookies[accessTokenName];
   const refreshToken = req.cookies[refreshTokenName];
@@ -78,10 +85,54 @@ const auth = async (req, res, next, todo) => {
     if (req.path === logoutPath) {
       throw Error('Logout');
     }
-    if (isAuthorized(req, decoded.user)) {
-      req.user = decoded.user;
-      return await todo(req, res, next);
-    } else return UnauthorizedHandler(req, res);
+    let casiUser;
+    // console.log(123);
+    if (decoded.user.casiID == undefined) {
+      console.log('error', 'User is not CASI');
+      return UnauthorizedHandler(req, res);
+    }
+
+    MongoClient.connect(url, (err, client) => {
+
+      assert.equal(err, null);
+
+      console.log('Connected correctly to server');
+
+      const db = client.db(dbname);
+      const collection = db.collection("users");
+
+      // find by id
+      collection.findOne(
+        {
+          _id: ObjectId(decoded.user.casiID),
+        },
+        async (err, item) => {
+          // console.log(item);
+          assert.equal(err, null);
+          if (item) {
+            console.log(item);
+            if (isAuthorized(req, item)) {
+              console.log(decoded.user);
+              req.user = decoded.user;
+              return await todo(req, res, next);
+            } else return UnauthorizedHandler(req, res);
+            // console.log({ item, casiUser });
+          }
+          else {
+            res.send("/login");
+          }
+          client.close();
+        }
+      );
+    });
+    // console.log(casiUser);
+    // if(casiUser == undefined){
+    //   console.log('error', 'User is not CASI. something is wrong');
+    //   return UnauthorizedHandler(req, res);
+    // }
+
+    
+    
   } catch (error) {
     console.log(error);
     req.user = null;

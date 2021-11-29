@@ -69,7 +69,7 @@ router.put(
         }
         await Item.remove({seller: user._id}).exec();
         await user.save();
-        delete user.password;
+        // delete user.password;
         const accessToken = jwt.sign({user}, privateKey, {
           expiresIn: '10min',
           issuer: 'auth.devclub.in',
@@ -98,7 +98,7 @@ router.put(
           Date.now() + 3600000 * 24 * Number(req.body.day)
         );
         await user.save();
-        delete user.password;
+        // delete user.password;
         const accessToken = jwt.sign({user}, privateKey, {
           expiresIn: '10min',
           issuer: 'auth.devclub.in',
@@ -128,14 +128,14 @@ router.put(
       }
       user.avatar = req.body.avatar;
       user.contact_number = req.body.contactNumber;
-      user.entry_number = req.body.entryNumber;
+      // user.entry_number = req.body.entryNumber;
       user.hostel = req.body.hostel;
-      user.firstName = req.body.firstName;
-      user.lastName = req.body.lastName;
-      user.email = req.body.email;
+      // user.firstName = req.body.firstName;
+      // user.lastName = req.body.lastName;
+      // user.email = req.body.email;
       user.description = req.body.description;
       await user.save();
-      delete user.password;
+      // delete user.password;
       const accessToken = jwt.sign({user}, privateKey, {
         expiresIn: '10min',
         issuer: 'auth.devclub.in',

@@ -44,6 +44,7 @@ router.post(
   async (req: express.Request, res: express.Response) => {
     try {
       const userobj: Record<string, unknown> = {
+        casiID: req.body.casiID,
         username: req.body.username,
         password: req.body.password,
         avatar: req.body.avatar,
@@ -62,7 +63,7 @@ router.post(
       // const user = await User.register(newUser, req.body.password);
       // req.login(user, () => {});
       const user = await newUser.save();
-      delete user.password;
+      // delete user.password;
       const accessToken = jwt.sign({user}, privateKey, {
         expiresIn: '10min',
         issuer: 'auth.devclub.in',
@@ -88,9 +89,9 @@ router.post('/login', async (req: express.Request, res: express.Response) => {
   //   {$match: {'documentKey._id': req.user._id}},
   // ]);
   try {
-    const user = await User.findOne({email: req.body.email});
+    const user = await User.findById(req.body._id);
     // console.log(await user.comparePassword(req.body.password));
-    delete user.password;
+    // delete user.password;
     const accessToken = jwt.sign({user}, privateKey, {
       expiresIn: '10min',
       issuer: 'auth.devclub.in',
@@ -139,7 +140,7 @@ router.patch(
       const user = await User.findById(req.user._id).exec();
       user.folCategory = [...new Set(user.folCategory.concat(req.params.slug))];
       const userx = await user.save();
-      delete userx.password;
+      // delete userx.password;
       const accessToken = jwt.sign({user:userx}, privateKey, {
         expiresIn: '10min',
         issuer: 'auth.devclub.in',
@@ -164,7 +165,7 @@ router.patch(
         value => value !== req.params.slug
       );
       const userx = await user.save();
-      delete userx.password;
+      // delete userx.password;
       const accessToken = jwt.sign({user:userx}, privateKey, {
         expiresIn: '10min',
         issuer: 'auth.devclub.in',

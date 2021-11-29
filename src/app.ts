@@ -32,7 +32,7 @@ mongoose.set('useUnifiedTopology', true);
 mongoose.Promise = global.Promise;
 
 const databaseUri =
-  process.env.MONGODB_URI || 'mongodb://localhost:27017/iitdmarket';
+  process.env.MONGODB_URI || 'mongodb+srv://admin:admin@node-crash-course.2vbeb.mongodb.net/node-crash?retryWrites=true&w=majority';
 mongoose
   .connect(databaseUri)
   .then(() => console.log('Database connected'))
@@ -54,7 +54,8 @@ app.use(
     resave: false,
     saveUninitialized: false,
     store: new MongoStore({
-      url: process.env.MONGODB_URI || 'mongodb://localhost/iitdmarket',
+      // url: process.env.MONGODB_URI || 'mongodb+srv://<username>:<password>@node-crash-course.2vbeb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority',
+      url: 'mongodb+srv://admin:admin@node-crash-course.2vbeb.mongodb.net/node-crash?retryWrites=true&w=majority',
     }),
   })
 );

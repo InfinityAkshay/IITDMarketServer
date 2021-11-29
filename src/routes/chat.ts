@@ -303,6 +303,15 @@ const socketIni = (http: http.Server) => {
       const userb = await User.findById(data.to._id).exec();
       userb.chatPersons = [...new Set(userb.chatPersons.concat(data.from))];
       await userb.save();
+      const accessToken = jwt.sign({user:userb}, privateKey, {
+        expiresIn: '10min',
+        issuer: 'auth.devclub.in',
+        algorithm: 'RS256',
+      });
+      // const refreshToken = jwt.sign({user}, privateKey);
+      // res.status(200).send({accessToken, refreshToken});
+
+      console.log(accessToken);
       const result = await Chat.findById(chat._id)
         .populate('messages')
         .lean()
@@ -331,6 +340,15 @@ const socketIni = (http: http.Server) => {
       const userb = await User.findById(data.to._id).exec();
       userb.chatPersons = [...new Set(userb.chatPersons.concat(data.from))];
       await userb.save();
+      const accessToken = jwt.sign({user:userb}, privateKey, {
+        expiresIn: '10min',
+        issuer: 'auth.devclub.in',
+        algorithm: 'RS256',
+      });
+      // const refreshToken = jwt.sign({user}, privateKey);
+      // res.status(200).send({accessToken, refreshToken});
+
+      console.log(accessToken);
       const chat = await Chat.findById(data.chatId).populate('messages').exec();
       chat.user2Anonymous = false;
       chat.messages.push(newMessage);

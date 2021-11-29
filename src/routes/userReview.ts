@@ -74,7 +74,7 @@ router.post(
       const notification = await Notification.create(newNotification);
       user.notifs.push(notification);
       await user.save();
-      delete user.password;
+      // delete user.password;
       const accessToken = jwt.sign({user}, privateKey, {
         expiresIn: '10min',
         issuer: 'auth.devclub.in',
@@ -127,7 +127,7 @@ router.put(
       const notification = await Notification.create(newNotification);
       user.notifs.push(notification);
       await user.save();
-      delete user.password;
+      // delete user.password;
       const accessToken = jwt.sign({user}, privateKey, {
         expiresIn: '10min',
         issuer: 'auth.devclub.in',
@@ -167,7 +167,7 @@ router.delete(
       const notification = await Notification.create(newNotification);
       user.notifs.push(notification);
       await user.save();
-      delete user.password;
+      // delete user.password;
       const accessToken = jwt.sign({user}, privateKey, {
         expiresIn: '10min',
         issuer: 'auth.devclub.in',

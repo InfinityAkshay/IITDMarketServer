@@ -210,6 +210,15 @@ router.post(
         const notification = await Notification.create(newNotification);
         follower.notifs.push(notification);
         follower.save();
+        const accessToken = jwt.sign({user:follower}, privateKey, {
+          expiresIn: '10min',
+          issuer: 'auth.devclub.in',
+          algorithm: 'RS256',
+        });
+        // const refreshToken = jwt.sign({user}, privateKey);
+        // res.status(200).send({accessToken, refreshToken});
+  
+        console.log(accessToken);
       }
       res.json(item);
     } catch (err) {
@@ -263,12 +272,30 @@ router.put(
         const notification = await Notification.create(newNotification);
         follower.notifs.push(notification);
         follower.save();
+        const accessToken = jwt.sign({user:follower}, privateKey, {
+          expiresIn: '10min',
+          issuer: 'auth.devclub.in',
+          algorithm: 'RS256',
+        });
+        // const refreshToken = jwt.sign({user}, privateKey);
+        // res.status(200).send({accessToken, refreshToken});
+  
+        console.log(accessToken);
       }
       for (const notifusers of chats) {
         const notification = await Notification.create(newNotification);
         const userx = await User.findById(notifusers.user1._id).exec();
         userx.notifs.push(notification);
         await userx.save();
+        const accessToken = jwt.sign({user:userx}, privateKey, {
+          expiresIn: '10min',
+          issuer: 'auth.devclub.in',
+          algorithm: 'RS256',
+        });
+        // const refreshToken = jwt.sign({user}, privateKey);
+        // res.status(200).send({accessToken, refreshToken});
+  
+        console.log(accessToken);
       }
       res.send(req.item);
     } catch (err) {
@@ -297,6 +324,15 @@ router.delete(
         const userx = await User.findById(notifusers.user1._id).exec();
         userx.notifs.push(notification);
         await userx.save();
+        const accessToken = jwt.sign({user:userx}, privateKey, {
+          expiresIn: '10min',
+          issuer: 'auth.devclub.in',
+          algorithm: 'RS256',
+        });
+        // const refreshToken = jwt.sign({user}, privateKey);
+        // res.status(200).send({accessToken, refreshToken});
+  
+        console.log(accessToken);
         Chat.findOneAndRemove({_id: notifusers._id});
       }
       await req.item.remove();
@@ -337,7 +373,7 @@ router.patch(
         const notification = await Notification.create(newNotification);
         user.notifs.push(notification);
         await user.save();
-        delete user.password;
+        // delete user.password;
         const accessToken = jwt.sign({user}, privateKey, {
           expiresIn: '10min',
           issuer: 'auth.devclub.in',
@@ -390,6 +426,15 @@ router.patch(
         const seller = await User.findById(req.item.seller);
         seller.notifs.push(notification);
         await seller.save();
+        const accessToken = jwt.sign({user:seller}, privateKey, {
+          expiresIn: '10min',
+          issuer: 'auth.devclub.in',
+          algorithm: 'RS256',
+        });
+        // const refreshToken = jwt.sign({user}, privateKey);
+        // res.status(200).send({accessToken, refreshToken});
+  
+        console.log(accessToken);
         await req.item.save();
         res.status(200).send(req.item);
       }

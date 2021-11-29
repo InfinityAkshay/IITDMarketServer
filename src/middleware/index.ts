@@ -157,7 +157,7 @@ export default {
         //   'You are already registered with email ' + user.email
         // );
         console.log('error',
-          'You are already registered with email ' + user.email);
+          'You are already registered with this email');
         
         res.status(500).send('/register');
       } else {
